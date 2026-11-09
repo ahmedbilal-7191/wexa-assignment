@@ -135,7 +135,7 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
 const dist = path.join(__dirname, '../client/dist');
 app.use(express.static(dist));
-app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html')));
+app.use((req, res) => res.sendFile(path.join(dist, 'index.html')));
 
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'Something went wrong on our side. Try again.' }); });
 
