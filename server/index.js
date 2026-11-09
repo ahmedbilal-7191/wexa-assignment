@@ -6,11 +6,12 @@ const bcrypt = require('bcryptjs');
 const pool = require('./db');
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(session({
   store: new PgStore({ pool, createTableIfMissing: true }),
   secret: process.env.SESSION_SECRET || 'dev-secret', resave: false, saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: 'lax', maxAge: 7 * 864e5 },
+  cookie: { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 7 * 864e5 },
 }));
 const wrap = fn => (req, res, next) => fn(req, res).catch(next);
 const auth = (req, res, next) => req.session.userId ? next() : res.status(401).json({ error: 'Please log in' });
@@ -131,6 +132,11 @@ app.put('/api/settings', auth, wrap(async (req, res) => {
 }));
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
+const dist = path.join(__dirname, '../client/dist');
+app.use(express.static(dist));
+app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html')));
+
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'Something went wrong on our side. Try again.' }); });
 
 (async () => {
